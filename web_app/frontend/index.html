@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PulmoScan AI - Advanced clinical dashboard for Lung Cancer Detection, Classification, and Semantic Tumor Segmentation.">
+    <title>PulmoScan AI — Advanced Lung Cancer Diagnostic Platform</title>
+    <!-- Google Fonts for Medical HUD Aesthetics -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Main Clinical Dashboard Container -->
+    <div class="dashboard-container">
+        
+        <!-- SIDEBAR: Platform Controls & Sample Library -->
+        <aside class="sidebar" id="clinical-sidebar">
+            <div class="brand">
+                <div class="logo-icon"></div>
+                <div class="brand-text">
+                    <h1>PULMOSCAN <span class="accent-text">AI</span></h1>
+                    <p class="brand-subtitle">Lung Oncology Analyzer</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Diagnostic Workspace</div>
+                <ul>
+                    <li class="active" id="nav-dashboard"><span class="icon">📊</span> Workstation</li>
+                </ul>
+            </nav>
+
+            <!-- Diagnostic Pipeline Control Panel -->
+            <div class="control-card panel-glass">
+                <h3 class="panel-title"><span class="title-icon">⚙️</span> Engine Configuration</h3>
+                
+                <div class="control-group">
+                    <label for="engine-mode-select">Active Analysis Engine</label>
+                    <div class="custom-select-wrapper">
+                        <select id="engine-mode-select">
+                            <option value="auto">Auto-Select Model</option>
+                            <option value="cv">Lightweight CV Engine</option>
+                            <option value="dl" disabled id="dl-option">Keras DL Engine (Locked)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="slider-header">
+                        <label for="sensitivity-slider">Detection Sensitivity</label>
+                        <span id="sensitivity-value">1.0x</span>
+                    </div>
+                    <input type="range" id="sensitivity-slider" min="0.5" max="1.5" step="0.1" value="1.0" class="medical-slider">
+                    <div class="slider-labels">
+                        <span>High Spec</span>
+                        <span>High Sens</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLINICAL SAMPLE LIBRARY -->
+            <div class="samples-panel panel-glass">
+                <h3 class="panel-title"><span class="title-icon">📂</span> Clinical Sample Scans</h3>
+                <p class="section-desc">Click a thumbnail to load and run instantaneous diagnostics on a patient CT slice.</p>
+                
+                <div class="samples-grid-wrapper">
+                    <div class="samples-grid" id="samples-container">
+                        <!-- Dynamically filled by app.js -->
+                        <div class="samples-loading">Loading clinical archive...</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            
+            <!-- HEADER BAR: Real-time System Metrics -->
+            <header class="hud-header">
+                <div class="header-welcome">
+                    <h2>PACS Workstation <span class="status-dot green" id="pipeline-status-dot"></span> <span class="status-text" id="pipeline-status-text">Pipeline Active</span></h2>
+                </div>
+                
+                <div class="system-status">
+                    <div class="metric-pill">
+                        <span class="pill-label">API Status</span>
+                        <span class="pill-value green" id="api-status-badge">ONLINE</span>
+                    </div>
+                    <div class="metric-pill">
+                        <span class="pill-label">Core Engine</span>
+                        <span class="pill-value" id="active-engine-badge">INITIALIZING</span>
+                    </div>
+                    <div class="metric-pill hide-mobile">
+                        <span class="pill-label">Build Pipeline</span>
+                        <span class="pill-value text-accent">v1.2.0</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CENTRAL WORKSPACE PANEL -->
+            <section class="workspace-grid">
+                
+                <!-- SCAN WORKSTATION VIEW (Canvasses & Upload) -->
+                <div class="workstation-card panel-glass">
+                    
+                    <!-- UPLOAD PREVIEW PLACEHOLDER (Visible by default) -->
+                    <div class="drop-zone-container" id="drop-zone">
+                        <div class="drop-zone-glow"></div>
+                        <input type="file" id="file-input" accept="image/*" class="file-input-hidden">
+                        
+                        <div class="drop-zone-content">
+                            <div class="upload-icon-pulse">
+                                <div class="upload-circle"></div>
+                                <span class="upload-arrow">⭡</span>
+                            </div>
+                            <h3>Upload Chest CT Scan</h3>
+                            <p class="upload-subtitle">Drag & Drop chest scan slice (PNG, JPG, TIFF) or browse computer</p>
+                            
+                            <button class="btn btn-primary" id="btn-browse-file">Browse Scan Files</button>
+                            
+                            <div class="drop-zone-specs">
+                                <span>✔ Supports standard axial slices</span>
+                                <span>✔ Real-time automated tumor segmentation</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PACS INTERACTIVE DUAL VIEWERS (Visible after upload) -->
+                    <div class="pacs-view-container hide" id="pacs-view-container">
+                        
+                        <!-- PAC TOOLBAR -->
+                        <div class="pacs-toolbar">
+                            <div class="toolbar-left">
+                                <span class="file-info-badge" id="loaded-filename">Patient_Scan_001.png</span>
+                            </div>
+                            
+                            <!-- Opacity and Colormap controls -->
+                            <div class="toolbar-center">
+                                <div class="toolbar-control">
+                                    <label for="mask-opacity-slider">Mask Blend</label>
+                                    <input type="range" id="mask-opacity-slider" min="0" max="100" value="70" class="mini-slider">
+                                    <span id="mask-opacity-label">70%</span>
+                                </div>
+                                
+                                <div class="toolbar-divider"></div>
+                                
+                                <div class="toolbar-control">
+                                    <label>Color Map</label>
+                                    <div class="colormap-buttons">
+                                        <button class="cmap-btn active" data-cmap="ruby" id="btn-cmap-ruby" title="Thermal Ruby"><span class="color-dot ruby"></span></button>
+                                        <button class="cmap-btn" data-cmap="cyan" id="btn-cmap-cyan" title="Cyber Cyan"><span class="color-dot cyan"></span></button>
+                                        <button class="cmap-btn" data-cmap="emerald" id="btn-cmap-emerald" title="Bio Hazard"><span class="color-dot emerald"></span></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="toolbar-right">
+                                <button class="btn btn-secondary btn-icon" id="btn-reset-view" title="Reset Pan & Zoom">⟳ Reset View</button>
+                            </div>
+                        </div>
+
+                        <!-- Side-by-Side Synchronized Canvases -->
+                        <div class="pacs-grid">
+                            
+                            <!-- View 1: Original Lung Slice -->
+                            <div class="canvas-panel">
+                                <div class="canvas-header">
+                                    <span class="canvas-title">Input CT Scan (Axial)</span>
+                                    <span class="canvas-coords" id="coords-left">Zoom: 100%</span>
+                                </div>
+                                <div class="canvas-wrapper">
+                                    <canvas id="canvas-original"></canvas>
+                                    <div class="canvas-instructions">✥ Drag to Pan | ⚲ Scroll to Zoom</div>
+                                </div>
+                            </div>
+                            
+                            <!-- View 2: Overlaid AI Segmentation -->
+                            <div class="canvas-panel highlight-border">
+                                <div class="canvas-header">
+                                    <span class="canvas-title text-accent">AI Overlay & Segmentation</span>
+                                    <span class="canvas-coords" id="coords-right">Synchronized</span>
+                                </div>
+                                <div class="canvas-wrapper">
+                                    <canvas id="canvas-overlay"></canvas>
+                                    <div class="canvas-instructions">✥ Panning & Zooming Synchronized</div>
+                                </div>
+                            </div>
+                            
+                        </div>
+
+                        <!-- Secondary Controls -->
+                        <div class="pacs-footer">
+                            <p class="disclaimer"><span class="alert-icon">⚠</span> AI-assisted clinical diagnosis tool. All segmentation results must be verified by a board-certified radiologist.</p>
+                            <button class="btn btn-secondary" id="btn-upload-new">Upload Another Scan</button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- DIAGNOSTIC CLINICAL READOUT (Sidebar panels) -->
+                <div class="diagnostics-column">
+                    
+                    <!-- DIAGNOSTIC OVERVIEW CARD (Always visible, changes state) -->
+                    <div class="diagnostic-card panel-glass text-center" id="diag-empty-card">
+                        <div class="diag-empty-state">
+                            <div class="scan-radar-icon">
+                                <div class="radar-line"></div>
+                            </div>
+                            <h3>Diagnostic Ready</h3>
+                            <p>Upload a patient scan or select a clinical archive sample to view deep classification and segmentations.</p>
+                        </div>
+                    </div>
+
+                    <!-- DYNAMIC RESULTS DISPLAY (Visible after analysis) -->
+                    <div class="diagnostic-results-container hide" id="diag-results-card">
+                        
+                        <!-- Primary Diagnosis HUD -->
+                        <div class="result-card panel-glass">
+                            <h3 class="panel-title">Diagnostic Assessment</h3>
+                            
+                            <div class="diagnosis-summary-box">
+                                <!-- Radial Confidence Gauge -->
+                                <div class="radial-gauge-wrapper">
+                                    <svg class="radial-gauge" viewBox="0 0 100 100">
+                                        <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
+                                        <circle class="gauge-fill" id="gauge-confidence-fill" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="251.2"></circle>
+                                    </svg>
+                                    <div class="gauge-text">
+                                        <span class="percentage" id="result-confidence-text">0%</span>
+                                        <span class="label">CONFIDENCE</span>
+                                    </div>
+                                </div>
+
+                                <div class="diagnosis-label-box">
+                                    <span class="severity-badge critical" id="result-severity-badge">MALIGNANT</span>
+                                    <h4 class="diagnosis-class" id="result-class-name">Adenocarcinoma</h4>
+                                    <p class="diagnosis-desc" id="result-summary-text">A peripheral nodule/mass measuring ~12mm is detected in the lung parenchyma.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Detailed Class Probability Breakdown -->
+                            <div class="probability-breakdown">
+                                <h5 class="breakdown-title">Probability Breakdown</h5>
+                                
+                                <div class="prob-bar-group">
+                                    <div class="prob-labels">
+                                        <span>Adenocarcinoma</span>
+                                        <span id="prob-val-adenocarcinoma">0%</span>
+                                    </div>
+                                    <div class="prob-track">
+                                        <div class="prob-fill bg-red" id="prob-bar-adenocarcinoma" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="prob-bar-group">
+                                    <div class="prob-labels">
+                                        <span>Squamous Cell Carcinoma</span>
+                                        <span id="prob-val-squamous">0%</span>
+                                    </div>
+                                    <div class="prob-track">
+                                        <div class="prob-fill bg-orange" id="prob-bar-squamous" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="prob-bar-group">
+                                    <div class="prob-labels">
+                                        <span>Large Cell Carcinoma</span>
+                                        <span id="prob-val-largecell">0%</span>
+                                    </div>
+                                    <div class="prob-track">
+                                        <div class="prob-fill bg-yellow" id="prob-bar-largecell" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="prob-bar-group">
+                                    <div class="prob-labels">
+                                        <span>Normal / Non-Malignant</span>
+                                        <span id="prob-val-normal">0%</span>
+                                    </div>
+                                    <div class="prob-track">
+                                        <div class="prob-fill bg-green" id="prob-bar-normal" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Segmented Nodule Physical Sizing Metrics -->
+                        <div class="metrics-card panel-glass">
+                            <h3 class="panel-title">Nodule Volumetrics & Shapes</h3>
+                            
+                            <div class="metrics-grid">
+                                <div class="metric-item">
+                                    <span class="metric-label">Estimated Nodule Size</span>
+                                    <span class="metric-number" id="metric-diameter">0.0 <span class="unit">mm</span></span>
+                                    <span class="metric-change">Max Diameter</span>
+                                </div>
+                                
+                                <div class="metric-item">
+                                    <span class="metric-label">Affected Lung Area</span>
+                                    <span class="metric-number" id="metric-percentage">0.0 <span class="unit">%</span></span>
+                                    <span class="metric-change">Of Total Parenchyma</span>
+                                </div>
+
+                                <div class="metric-item">
+                                    <span class="metric-label">Shape Circularity</span>
+                                    <span class="metric-number" id="metric-circularity">0.00</span>
+                                    <span class="metric-change">Sphericity Index</span>
+                                </div>
+
+                                <div class="metric-item">
+                                    <span class="metric-label">Nodule Count</span>
+                                    <span class="metric-number" id="metric-nodules-count">0</span>
+                                    <span class="metric-change">Identified Lesions</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Clinical Findings & Next Action Paths -->
+                        <div class="insights-card panel-glass">
+                            <h3 class="panel-title">Clinical Findings & Insights</h3>
+                            
+                            <div class="insight-tab">
+                                <div class="insight-tab-section">
+                                    <h6>Radiological Markers</h6>
+                                    <p id="insight-markers">Irregular spiculed margins; pleural indentation; ground-glass opacity components.</p>
+                                </div>
+                                
+                                <div class="insight-tab-section">
+                                    <h6>Standard Care Recommendation</h6>
+                                    <p id="insight-recommendation">Schedule contrast-enhanced chest CT scan immediately. Refer to pulmonologist for biopsy and PET-CT staging.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <button class="btn btn-primary btn-full-width" id="btn-export-report">🗎 Export Radiological PDF Report</button>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- PRINTABLE REPORT OVERLAY (Hidden by default, used for clean printing/exporting) -->
+    <div id="printable-report" class="print-only">
+        <div class="print-header">
+            <h2>PULMOSCAN AI — CLINICAL EXAM REPORT</h2>
+            <p>Oncology Deep Learning Imaging & Computer Vision Analysis</p>
+        </div>
+        <hr>
+        <div class="print-meta-grid">
+            <div><strong>Patient ID:</strong> <span id="print-patient-id">N/A</span></div>
+            <div><strong>Exam Date:</strong> <span id="print-exam-date">N/A</span></div>
+            <div><strong>Analysis Engine:</strong> <span id="print-engine">N/A</span></div>
+            <div><strong>Clinical Urgency:</strong> <span id="print-urgency">N/A</span></div>
+        </div>
+        <hr>
+        <h3>Diagnostic Diagnosis Summary</h3>
+        <p><strong>Primary Assessment:</strong> <span id="print-diag-label" style="text-transform: capitalize;">N/A</span> (<span id="print-diag-conf">0%</span> Confidence)</p>
+        <p><strong>Clinical Narrative:</strong> <span id="print-diag-summary">N/A</span></p>
+        
+        <h3>Automated Lung Volumetric Measurements</h3>
+        <ul>
+            <li><strong>Maximum Nodule Diameter:</strong> <span id="print-diag-diameter">0.0 mm</span></li>
+            <li><strong>Affected Lung Fraction:</strong> <span id="print-diag-fraction">0.0 %</span></li>
+            <li><strong>Nodule Compactness Circularity:</strong> <span id="print-diag-circularity">0.00</span></li>
+            <li><strong>Identified Dense Lesions:</strong> <span id="print-diag-count">0</span></li>
+        </ul>
+
+        <h3>Radiological Findings</h3>
+        <p><span id="print-diag-markers">N/A</span></p>
+        
+        <h3>Recommended Clinical Path</h3>
+        <p><span id="print-diag-recommendation">N/A</span></p>
+        
+        <div class="print-signatures">
+            <div class="sig-box">
+                <p>Radiologist Signature</p>
+                <div class="sig-line"></div>
+                <p>Date: __________________</p>
+            </div>
+            <div class="sig-box">
+                <p>PulmoScan AI Auditor</p>
+                <div class="sig-line">Verified Electronic Scan</div>
+                <p>Ref: PS-AI-2026-X</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

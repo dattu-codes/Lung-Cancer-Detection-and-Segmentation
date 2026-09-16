@@ -1,0 +1,10 @@
+*.keras
+*.h5
+*.pth
+lung_env/
+venv/
+web_app/venv/
+web_app/backend/uploads/
+__pycache__/
+*.pyc
+web_app/venv/ 
